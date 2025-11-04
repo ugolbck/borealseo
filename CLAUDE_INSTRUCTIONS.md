@@ -1,186 +1,395 @@
-# Claude Instructions for ShipFast TypeScript SaaS Boilerplate
+# Claude Code Instructions - ShipFast Next.js 15 + Tailwind v4 + Supabase
 
 ## Project Context
-You are working with a production-ready Next.js 15+ TypeScript SaaS boilerplate called ShipFast. This is a complete starter template for building SaaS applications with payments, authentication, and modern web technologies.
+You are working on a **ShipFast TypeScript SaaS boilerplate** that has been upgraded to use the latest technologies:
+- **Next.js 15.4+** with App Router
+- **React 19**
+- **TypeScript 5.9+**
+- **Tailwind CSS 4.1+** (CSS-first configuration)
+- **DaisyUI 5.0+**
+- **Supabase** for authentication and database
+- **Stripe** for payments
+- **Resend** for emails
 
-## Architecture Overview
+## Critical Next.js 15 Changes You Must Follow
 
-### Core Technologies
-- **Frontend**: Next.js 15+ with App Router, React 19+, TypeScript 5.9+
-- **Styling**: TailwindCSS 4.1+ with DaisyUI 5.0+ component library
-- **Database**: MongoDB with Mongoose ODM
-- **Authentication**: NextAuth v5 (beta) with Google OAuth and Email providers
-- **Payments**: Stripe integration with webhooks for subscriptions and one-time payments
-- **Email**: Resend for transactional emails
-- **Blog**: MDX support for content management
+### 1. Async APIs - ALWAYS Use Await
+```typescript
+// ❌ WRONG (Next.js 14 style)
+const headersList = headers();
+const cookieStore = cookies();
+const { id } = params;
 
-### Project Structure
-```
-├── app/                    # Next.js App Router pages and API routes
-│   ├── api/               # API routes (auth, stripe, webhooks, leads)
-│   ├── blog/              # Blog pages with MDX content
-│   ├── dashboard/         # Protected user dashboard
-│   └── (auth)/           # Authentication pages
-├── components/            # Reusable UI components
-├── libs/                 # Utility libraries and configurations
-├── models/               # MongoDB/Mongoose models
-├── types/                # TypeScript type definitions
-└── config.ts            # Centralized configuration
+// ✅ CORRECT (Next.js 15 style)
+const headersList = await headers();
+const cookieStore = await cookies();
+const { id } = await params;
 ```
 
-## Development Guidelines
+### 2. Dynamic Route Params Are Now Promises
+```typescript
+// ❌ WRONG
+export default function Page({ params }: { params: { id: string } }) {
+  const id = params.id;
+}
 
-### When Writing Code
-1. **Always use TypeScript**: Provide proper type definitions for all functions, components, and data structures
-2. **Follow Next.js 15+ patterns**: Use App Router, Server Components by default, and "use client" only when necessary
-3. **Use existing patterns**: Study existing components and API routes to maintain consistency
-4. **Implement proper error handling**: Always use try-catch blocks and provide meaningful error messages
-5. **Follow the config pattern**: All configuration should reference `/config.ts`
+// ✅ CORRECT
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+}
 
-### Component Development
-- Use functional components with hooks
-- Implement proper TypeScript interfaces for props
-- Use DaisyUI classes for consistent styling
-- Include loading states and error handling
-- Make components responsive with Tailwind breakpoints
-- Follow accessibility best practices
+// Also applies to generateMetadata
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+}
+```
 
-### API Route Development
-- Always connect to MongoDB using `connectMongo()` before database operations
-- Validate request bodies and return proper HTTP status codes
-- Use NextAuth session for authentication when needed
-- Implement proper error handling with descriptive messages
-- Follow RESTful conventions
+### 3. Supabase Server Client is Now Async
+```typescript
+// ❌ WRONG
+import { createClient } from "@/libs/supabase/server";
+const supabase = createClient();
 
-### Database Operations
-- Use Mongoose models defined in `/models/`
-- Always handle async operations properly
-- Implement proper error handling for database failures
-- Use proper validation in schemas
+// ✅ CORRECT
+import { createClient } from "@/libs/supabase/server";
+const supabase = await createClient();
+```
 
-### Authentication Flow
-- NextAuth v5 is configured with Google OAuth and Email providers
-- User sessions are stored in JWT tokens
-- Protected routes should check authentication status
-- User data is stored in MongoDB with proper schema
+## Tailwind CSS v4 Patterns You Must Use
 
-### Stripe Integration
-- Webhooks are handled in `/app/api/webhook/stripe/route.ts`
-- Always verify webhook signatures for security
-- Update user access based on payment events
-- Handle all relevant Stripe events (checkout completed, subscription deleted, etc.)
+### 1. CSS-First Configuration
+```css
+/* app/globals.css */
+@import "tailwindcss";
 
-### Styling Guidelines
-- Use TailwindCSS v4 utility classes with CSS-first configuration
-- Leverage DaisyUI components: `btn`, `card`, `modal`, `dropdown`, etc.
-- Implement responsive design with Tailwind breakpoints
-- Use semantic HTML elements
-- Include proper ARIA attributes for accessibility
-- Configure theme variables in CSS using `@theme` directive
-- Use `@import "tailwindcss"` instead of `@tailwind` directives
+@theme {
+  --color-brand-500: #570df8;
+  --spacing-custom: 2.5rem;
+  --animate-bounce-slow: bounce 2s infinite;
+}
+```
 
-## Common Tasks and Patterns
+### 2. Custom Utilities
+```css
+@utility btn-gradient {
+  background: linear-gradient(45deg, #570df8, #a855f7);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+}
+```
 
-### Adding a New Component
-1. Create component in `/components/ComponentName.tsx`
-2. Use PascalCase for component names
-3. Define TypeScript interface for props
-4. Use DaisyUI classes for styling
-5. Export default the main component
+### 3. No More tailwind.config.js
+- All configuration goes in CSS using `@theme`
+- Use `@tailwindcss/postcss` plugin in PostCSS config
+- DaisyUI themes are configured in CSS, not JS
 
-### Creating an API Route
-1. Create route in `/app/api/[feature]/route.ts`
-2. Export named functions for HTTP methods (GET, POST, etc.)
-3. Connect to MongoDB if database operations are needed
-4. Validate inputs and handle errors properly
-5. Return consistent JSON responses
+## Supabase Patterns You Must Follow
 
-### Adding a New Page
-1. Create page in `/app/[route]/page.tsx`
-2. Use Server Components by default
-3. Implement proper SEO with metadata
-4. Include proper error boundaries
-5. Use the layout system appropriately
+### 1. Server Components (Most Common)
+```typescript
+import { createClient } from "@/libs/supabase/server";
+import { redirect } from "next/navigation";
 
-### Working with the Database
-1. Define models in `/models/` using Mongoose schemas
-2. Use TypeScript interfaces for type safety
-3. Always use `connectMongo()` before operations
-4. Handle connection errors gracefully
-5. Use proper validation and error handling
+export default async function PrivatePage() {
+  const supabase = await createClient(); // Always await!
+  
+  const { data: { user }, error } = await supabase.auth.getUser();
+  
+  if (!user) {
+    redirect("/signin");
+  }
+  
+  return <div>Protected content</div>;
+}
+```
 
-### Implementing Authentication
-1. Use `auth()` from `/libs/next-auth` to get session
-2. Check authentication in API routes when needed
-3. Redirect unauthenticated users appropriately
-4. Use proper session handling patterns
+### 2. Client Components
+```typescript
+"use client";
+import { createClient } from "@/libs/supabase/client";
+import { useEffect, useState } from "react";
 
-## Configuration Management
-- All app configuration is centralized in `/config.ts`
-- Environment variables are properly typed and validated
-- Use the `ConfigProps` interface for type safety
-- Access config throughout the app using `import config from "@/config"`
+export default function ClientComponent() {
+  const supabase = createClient(); // No await for client
+  const [user, setUser] = useState(null);
+  
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
+  }, []);
+}
+```
+
+### 3. API Routes
+```typescript
+import { createClient } from "@/libs/supabase/server";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function GET(req: NextRequest) {
+  const supabase = await createClient(); // Always await!
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  
+  // Your logic here
+}
+```
+
+## Component Patterns
+
+### 1. Server Component (Default)
+```typescript
+// No "use client" directive
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Page Title",
+};
+
+export default async function Page() {
+  // Can use await, fetch data, etc.
+  return <div>Server component</div>;
+}
+```
+
+### 2. Client Component (When Needed)
+```typescript
+"use client";
+import { useState, useEffect } from "react";
+
+export default function InteractiveComponent() {
+  const [state, setState] = useState(false);
+  
+  return (
+    <button onClick={() => setState(!state)}>
+      {state ? "On" : "Off"}
+    </button>
+  );
+}
+```
+
+## API Route Patterns
+
+### 1. Webhook Handler (Stripe)
+```typescript
+import { headers } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+
+export async function POST(req: NextRequest) {
+  const body = await req.text();
+  const headersList = await headers(); // Must await!
+  const signature = headersList.get("stripe-signature");
+  
+  // Verify webhook signature
+  // Handle webhook event
+}
+```
+
+### 2. Protected API Route
+```typescript
+import { createClient } from "@/libs/supabase/server";
+
+export async function POST(req: NextRequest) {
+  const supabase = await createClient(); // Must await!
+  
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  
+  // Protected logic here
+}
+```
+
+## Styling Patterns
+
+### 1. Use DaisyUI Components
+```jsx
+<div className="card bg-base-100 shadow-xl">
+  <div className="card-body">
+    <h2 className="card-title">Card Title</h2>
+    <p>Card content</p>
+    <div className="card-actions justify-end">
+      <button className="btn btn-primary">Action</button>
+    </div>
+  </div>
+</div>
+```
+
+### 2. Responsive Design
+```jsx
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  <div className="p-4 bg-base-200 rounded-lg">Content</div>
+</div>
+```
+
+### 3. Custom Styles with CSS Variables
+```jsx
+<div 
+  className="p-4 rounded-lg"
+  style={{ backgroundColor: "var(--color-brand-500)" }}
+>
+  Custom colored content
+</div>
+```
 
 ## Error Handling Patterns
-- Use try-catch blocks in all async operations
-- Log errors with descriptive context
-- Return proper HTTP status codes in API routes
-- Use toast notifications for user-facing errors
-- Implement proper loading states in components
 
-## Security Considerations
-- Always validate user inputs
-- Verify webhook signatures (especially Stripe)
-- Use proper authentication checks
-- Sanitize data before database operations
-- Follow OWASP security guidelines
+### 1. API Routes
+```typescript
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    
+    if (!body.email) {
+      return NextResponse.json(
+        { error: "Email is required" },
+        { status: 400 }
+      );
+    }
+    
+    // Your logic
+    return NextResponse.json({ success: true });
+    
+  } catch (error) {
+    console.error("API Error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+```
 
-## Performance Optimization
-- Use Next.js Image component for optimized images
-- Implement proper lazy loading
-- Use Server Components when possible
-- Optimize bundle size with proper imports
-- Use proper caching strategies
+### 2. Client Components
+```typescript
+"use client";
+import { toast } from "react-hot-toast";
 
-## Testing Approach
-- Write unit tests for utility functions
-- Test API routes with proper mocking
-- Test components with React Testing Library
-- Use proper TypeScript types in tests
-- Mock external services (Stripe, MongoDB, etc.)
+export default function Component() {
+  const handleAction = async () => {
+    try {
+      const response = await fetch("/api/action", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: "example" }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Action failed");
+      }
+      
+      toast.success("Action completed successfully!");
+      
+    } catch (error) {
+      toast.error("Something went wrong");
+      console.error(error);
+    }
+  };
+}
+```
 
-## Deployment Considerations
-- Environment variables must be properly configured
-- Database connections should be optimized for production
-- Webhook endpoints must be accessible
-- Static assets should be optimized
-- Error monitoring should be implemented
+## Common Mistakes to Avoid
 
-## Common Pitfalls to Avoid
-- Don't use `any` type unless absolutely necessary
-- Don't forget to connect to MongoDB in API routes
-- Don't skip webhook signature verification
-- Don't hardcode configuration values
-- Don't bypass TypeScript strict mode
-- Don't forget error handling in async operations
-- Don't create components without proper TypeScript interfaces
+### ❌ Don't Do This
+```typescript
+// Using old Next.js 14 patterns
+const params = { id: "123" }; // params should be awaited
+const headers = headers(); // should be await headers()
+const supabase = createClient(); // should be await createClient() for server
 
-## When Helping with This Codebase
-1. **Understand the context**: This is a production SaaS boilerplate with real payment processing
-2. **Follow existing patterns**: Study how similar functionality is implemented
-3. **Maintain consistency**: Use the same coding style and architecture patterns
-4. **Consider security**: Always validate inputs and handle sensitive operations properly
-5. **Think about user experience**: Implement proper loading states and error handling
-6. **Use proper TypeScript**: Provide type safety throughout the application
-7. **Follow Next.js best practices**: Use App Router patterns and proper component architecture
+// Using old Tailwind config
+module.exports = { theme: { ... } }; // Should be CSS @theme
 
-## Key Files to Reference
-- `/config.ts` - Central configuration
-- `/libs/next-auth.ts` - Authentication setup
-- `/libs/stripe.ts` - Stripe integration
-- `/libs/mongoose.ts` - Database connection
-- `/types/config.ts` - Configuration types
-- `/components/LayoutClient.tsx` - Client-side layout wrapper
-- `/app/api/webhook/stripe/route.ts` - Stripe webhook handling
+// Hardcoding values
+const apiUrl = "https://api.example.com"; // Should use env vars
+```
 
-Remember: This is a complete SaaS boilerplate that handles real payments and user data. Always prioritize security, proper error handling, and user experience in any modifications or additions. 
+### ✅ Do This Instead
+```typescript
+// Next.js 15 patterns
+const { id } = await params;
+const headersList = await headers();
+const supabase = await createClient();
+
+// Tailwind v4 CSS config
+@theme {
+  --color-primary: #570df8;
+}
+
+// Environment variables
+const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+```
+
+## File Structure You Should Follow
+```
+app/
+├── api/
+│   ├── auth/callback/route.ts
+│   ├── stripe/
+│   │   ├── create-checkout/route.ts
+│   │   └── create-portal/route.ts
+│   └── webhook/stripe/route.ts
+├── blog/[articleId]/page.tsx
+├── dashboard/
+│   ├── layout.tsx
+│   └── page.tsx
+├── globals.css
+└── layout.tsx
+
+components/
+├── ButtonCheckout.tsx
+├── ButtonSignin.tsx
+└── LayoutClient.tsx
+
+libs/
+├── supabase/
+│   ├── client.ts
+│   └── server.ts
+├── stripe.ts
+└── resend.ts
+```
+
+## When to Use Each Pattern
+
+### Use Server Components When:
+- Fetching data from database/API
+- Handling authentication checks
+- Generating metadata
+- Static content rendering
+
+### Use Client Components When:
+- Handling user interactions (clicks, form inputs)
+- Managing local state
+- Using browser APIs
+- Real-time features
+
+### Use API Routes When:
+- Handling form submissions
+- Webhook endpoints
+- Server-side operations
+- Database mutations
+
+## Testing Considerations
+
+### Test Build Command
+Always test that the project builds successfully:
+```bash
+npm run build
+```
+
+### Common Build Errors to Watch For:
+1. Missing `await` on async Next.js 15 APIs
+2. Incorrect `params` typing in dynamic routes
+3. Client/Server component boundary issues
+4. Missing environment variables
+5. Tailwind CSS configuration errors
+
+Remember: This project uses the latest versions of all technologies, so always follow the patterns shown above for compatibility and best practices. 

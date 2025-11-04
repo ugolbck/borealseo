@@ -1,16 +1,44 @@
 @import "tailwindcss";
 @plugin "daisyui" {
-  themes: light --default;
+  themes: dark --default;
 }
 
 @theme {
   --font-display: "Satoshi", "sans-serif";
-  
+
+  /* Custom color palette - Dark theme with blue-green accent (northern lights) */
+  --color-primary: #14b8a6; /* Teal - main accent */
+  --color-primary-focus: #0d9488; /* Darker teal */
+  --color-primary-content: #ffffff;
+
+  --color-secondary: #6366f1; /* Indigo for secondary actions */
+  --color-secondary-focus: #4f46e5;
+  --color-secondary-content: #ffffff;
+
+  --color-accent: #22d3ee; /* Cyan accent for highlights */
+  --color-accent-focus: #06b6d4;
+  --color-accent-content: #ffffff;
+
+  --color-neutral: #1f2937; /* Dark gray for backgrounds */
+  --color-neutral-focus: #111827; /* Darker gray */
+  --color-neutral-content: #e5e7eb;
+
+  --color-base-100: #0f172a; /* Very dark blue-gray background */
+  --color-base-200: #1e293b; /* Slightly lighter for cards */
+  --color-base-300: #334155; /* Even lighter for borders */
+  --color-base-content: #f1f5f9; /* Light text */
+
+  --color-info: #3b82f6; /* Blue for info */
+  --color-success: #10b981; /* Green for success */
+  --color-warning: #f59e0b; /* Amber for warnings */
+  --color-error: #ef4444; /* Red for errors */
+
   --animate-shimmer: shimmer 3s ease-out infinite alternate;
   --animate-opacity: opacity 0.25s ease-in-out;
   --animate-appearFromRight: appearFromRight 300ms ease-in-out;
   --animate-wiggle: wiggle 1.5s ease-in-out infinite;
   --animate-popup: popup 0.25s ease-in-out;
+  --animate-aurora: aurora 8s ease-in-out infinite;
 
   @keyframes shimmer {
     0% { background-position: 0 50%; }
@@ -41,6 +69,21 @@
     50% { transform: scale(1.1); opacity: 1; }
     100% { transform: scale(1); opacity: 1; }
   }
+
+  @keyframes aurora {
+    0% {
+      background-position: 0% 50%;
+      filter: hue-rotate(0deg);
+    }
+    50% {
+      background-position: 100% 50%;
+      filter: hue-rotate(30deg);
+    }
+    100% {
+      background-position: 0% 50%;
+      filter: hue-rotate(0deg);
+    }
+  }
 }
 
 html,
@@ -52,23 +95,61 @@ progress::-webkit-progress-value {
   transition: 0.6s width ease-out;
 }
 
+/* Northern lights inspired gradient */
 .btn-gradient {
-  background: linear-gradient(60deg, #f79533, #f37055, #ef4e7b, #a166ab, #5073b8, #1098ad, #07b39b, #6fba82) !important;
+  background: linear-gradient(135deg, #14b8a6, #06b6d4, #3b82f6, #6366f1, #8b5cf6) !important;
   background-size: 300% 300% !important;
   animation: var(--animate-shimmer) !important;
   border: 0 !important;
   border-color: transparent !important;
   color: white !important;
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1) !important;
+  box-shadow: 0 8px 16px -4px rgb(20 184 166 / 0.3), 0 4px 6px -2px rgb(20 184 166 / 0.2) !important;
 }
 
 .btn-gradient:hover {
-  filter: saturate(1.2) !important;
+  filter: brightness(1.1) saturate(1.2) !important;
+  box-shadow: 0 12px 24px -4px rgb(20 184 166 / 0.4), 0 6px 8px -2px rgb(20 184 166 / 0.3) !important;
 }
 
 .btn-gradient:disabled {
   background: rgb(107 114 128 / 0.3) !important;
   color: rgb(156 163 175) !important;
+}
+
+/* Aurora effect for hero sections */
+.aurora-bg {
+  background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a);
+  background-size: 400% 400%;
+  position: relative;
+}
+
+.aurora-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+    rgba(20, 184, 166, 0.1) 0%,
+    rgba(99, 102, 241, 0.1) 25%,
+    rgba(139, 92, 246, 0.1) 50%,
+    rgba(59, 130, 246, 0.1) 75%,
+    rgba(20, 184, 166, 0.1) 100%
+  );
+  background-size: 400% 400%;
+  animation: var(--animate-aurora);
+  opacity: 0.6;
+}
+
+/* Glowing card effect */
+.card-glow {
+  box-shadow: 0 0 20px rgba(20, 184, 166, 0.1);
+  border: 1px solid rgba(20, 184, 166, 0.2);
+  transition: all 0.3s ease;
+}
+
+.card-glow:hover {
+  box-shadow: 0 0 30px rgba(20, 184, 166, 0.2);
+  border-color: rgba(20, 184, 166, 0.4);
+  transform: translateY(-2px);
 }
 
 .btn {

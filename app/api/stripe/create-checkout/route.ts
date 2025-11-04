@@ -1,12 +1,10 @@
-import { NextResponse, NextRequest } from "next/server";
-import { auth } from "@/libs/next-auth";
 import { createCheckout } from "@/libs/stripe";
-import connectMongo from "@/libs/mongoose";
-import User from "@/models/User";
+import { createClient } from "@/libs/supabase/server";
+import { NextRequest, NextResponse } from "next/server";
 
 // This function is used to create a Stripe Checkout Session (one-time payment or subscription)
 // It's called by the <ButtonCheckout /> component
-// By default, it doesn't force users to be authenticated. But if they are, it will prefill the Checkout data with their email and/or credit card
+// Users must be authenticated. It will prefill the Checkout data with their email and/or credit card (if any)
 export async function POST(req: NextRequest) {
   const body = await req.json();
 
@@ -31,17 +29,19 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const session = await auth();
+    const supabase = await createClient();
 
-    await connectMongo();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     const { priceId, mode, successUrl, cancelUrl } = body;
-    
-    let user = null;
-    if (session?.user?.id) {
-      const { id } = session.user;
-      user = await User.findById(String(id));
-    }
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user?.id)
+      .single();
 
     const stripeSessionURL = await createCheckout({
       priceId,
@@ -49,9 +49,12 @@ export async function POST(req: NextRequest) {
       successUrl,
       cancelUrl,
       // If user is logged in, it will pass the user ID to the Stripe Session so it can be retrieved in the webhook later
-      clientReferenceId: user?._id?.toString(),
-      // If user is logged in, this will automatically prefill Checkout data like email and/or credit card for faster checkout
-      user,
+      clientReferenceId: user?.id,
+      user: {
+        email: data?.email,
+        // If the user has already purchased, it will automatically prefill it's credit card
+        customerId: data?.customer_id,
+      },
       // If you send coupons from the frontend, you can pass it here
       // couponId: body.couponId,
     });

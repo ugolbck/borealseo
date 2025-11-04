@@ -43,6 +43,10 @@ export interface ConfigProps {
       }[];
     }[];
   };
+  trial?: {
+    durationDays: number;
+    features: string[];
+  };
   aws?: {
     bucket?: string;
     bucketUrl?: string;

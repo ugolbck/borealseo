@@ -11,8 +11,8 @@ export async function generateMetadata({
 }: {
   params: Promise<{ articleId: string }>;
 }) {
-  const resolvedParams = await params;
-  const article = articles.find((article) => article.slug === resolvedParams.articleId);
+  const { articleId } = await params;
+  const article = articles.find((article) => article.slug === articleId);
 
   return getSEOTags({
     title: article.title,
@@ -42,14 +42,14 @@ export default async function Article({
 }: {
   params: Promise<{ articleId: string }>;
 }) {
-  const resolvedParams = await params;
-  const article = articles.find((article) => article.slug === resolvedParams.articleId);
+  const { articleId } = await params;
+  const article = articles.find((article) => article.slug === articleId);
   const articlesRelated = articles
     .filter(
       (a) =>
-        a.slug !== resolvedParams.articleId &&
+        a.slug !== articleId &&
         a.categories.some((c) =>
-          article.categories.map((c) => c.slug).includes(c.slug)
+          article?.categories.map((c) => c.slug).includes(c.slug)
         )
     )
     .sort(

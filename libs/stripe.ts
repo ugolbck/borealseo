@@ -1,5 +1,36 @@
 import Stripe from "stripe";
 
+// Lazy initialize Stripe to avoid build-time errors
+let _stripe: Stripe | null = null;
+
+function getStripe(): Stripe {
+  if (_stripe) return _stripe;
+
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+
+  if (!stripeSecretKey) {
+    throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
+  }
+
+  if (!stripeSecretKey.startsWith('sk_')) {
+    throw new Error('STRIPE_SECRET_KEY must be a valid Stripe secret key starting with "sk_"');
+  }
+
+  _stripe = new Stripe(stripeSecretKey, {
+    apiVersion: "2023-08-16",
+    typescript: true,
+  });
+
+  return _stripe;
+}
+
+export const stripe = new Proxy({} as Stripe, {
+  get: (target, prop) => {
+    const stripeInstance = getStripe();
+    return stripeInstance[prop as keyof Stripe];
+  }
+});
+
 interface CreateCheckoutParams {
   priceId: string;
   mode: "payment" | "subscription";
@@ -29,10 +60,6 @@ export const createCheckout = async ({
   couponId,
 }: CreateCheckoutParams): Promise<string> => {
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2023-08-16", // TODO: update this when Stripe updates their API
-      typescript: true,
-    });
 
     const extraParams: {
       customer?: string;
@@ -92,10 +119,6 @@ export const createCustomerPortal = async ({
   customerId,
   returnUrl,
 }: CreateCustomerPortalParams): Promise<string> => {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-    apiVersion: "2023-08-16", // TODO: update this when Stripe updates their API
-    typescript: true,
-  });
 
   const portalSession = await stripe.billingPortal.sessions.create({
     customer: customerId,
@@ -105,13 +128,9 @@ export const createCustomerPortal = async ({
   return portalSession.url;
 };
 
-// This is used to get the uesr checkout session and populate the data so we get the planId the user subscribed to
+// This is used to get the user checkout session and populate the data so we get the planId the user subscribed to
 export const findCheckoutSession = async (sessionId: string) => {
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-      apiVersion: "2023-08-16", // TODO: update this when Stripe updates their API
-      typescript: true,
-    });
 
     const session = await stripe.checkout.sessions.retrieve(sessionId, {
       expand: ["line_items"],

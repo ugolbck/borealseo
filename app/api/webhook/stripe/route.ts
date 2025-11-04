@@ -1,14 +1,10 @@
 import configFile from "@/config";
-import { findCheckoutSession } from "@/libs/stripe";
-import { SupabaseClient } from "@supabase/supabase-js";
+import { stripe, findCheckoutSession } from "@/libs/stripe";
+import { createClient } from "@supabase/supabase-js";
 import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2023-08-16",
-  typescript: true,
-});
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 // This is where we receive Stripe webhook events
@@ -25,9 +21,15 @@ export async function POST(req: NextRequest) {
   let event;
 
   // Create a private supabase client using the secret service_role API key
-  const supabase = new SupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    }
   );
 
   // verify Stripe event is legit
@@ -50,13 +52,13 @@ export async function POST(req: NextRequest) {
 
         const session = await findCheckoutSession(stripeObject.id);
 
-        const customerId = session?.customer;
+        const customerId = session?.customer as string;
         const priceId = session?.line_items?.data[0]?.price.id;
         const userId = stripeObject.client_reference_id;
         const plan = configFile.stripe.plans.find((p) => p.priceId === priceId);
 
         const customer = (await stripe.customers.retrieve(
-          customerId as string
+          customerId
         )) as Stripe.Customer;
 
         if (!plan) break;
@@ -64,40 +66,45 @@ export async function POST(req: NextRequest) {
         let user;
         if (!userId) {
           // check if user already exists
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("email", customer.email)
-            .single();
-          if (profile) {
-            user = profile;
+          const { data: existingUser } = await supabase.auth.admin.listUsers();
+          const foundUser = existingUser?.users.find((u: any) => u.email === customer.email);
+
+          if (foundUser) {
+            user = foundUser;
           } else {
             // create a new user using supabase auth admin
             const { data } = await supabase.auth.admin.createUser({
               email: customer.email,
             });
-
             user = data?.user;
           }
         } else {
           // find user by ID
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", userId)
-            .single();
-
-          user = profile;
+          const { data } = await supabase.auth.admin.getUserById(userId);
+          user = data?.user;
         }
 
+        if (!user) break;
+
+        // Determine plan type and subscription details
+        const planType = priceId === process.env.STRIPE_LTD_PRICE_ID ? 'ltd' :
+                        priceId === process.env.STRIPE_MONTHLY_PRICE_ID ? 'weekly' : 'weekly';
+
+        // Create or update subscription record
+        const subscriptionData = {
+          user_id: user.id,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: stripeObject.subscription as string || null,
+          status: 'active' as const,
+          plan_type: planType as 'weekly' | 'ltd',
+          cancel_at_period_end: false,
+          current_period_start: new Date().toISOString(),
+          current_period_end: new Date(Date.now() + (planType === 'ltd' ? 100 * 365 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000)).toISOString(),
+        };
+
         await supabase
-          .from("profiles")
-          .update({
-            customer_id: customerId,
-            price_id: priceId,
-            has_access: true,
-          })
-          .eq("id", user?.id);
+          .from("subscriptions")
+          .upsert(subscriptionData, { onConflict: 'user_id' });
 
         // Extra: send email with user link, product page, etc...
         // try {
@@ -117,8 +124,18 @@ export async function POST(req: NextRequest) {
 
       case "customer.subscription.updated": {
         // The customer might have changed the plan (higher or lower plan, cancel soon etc...)
-        // You don't need to do anything here, because Stripe will let us know when the subscription is canceled for good (at the end of the billing cycle) in the "customer.subscription.deleted" event
-        // You can update the user data to show a "Cancel soon" badge for instance
+        const stripeObject: Stripe.Subscription = event.data
+          .object as Stripe.Subscription;
+
+        await supabase
+          .from("subscriptions")
+          .update({
+            status: stripeObject.status,
+            cancel_at_period_end: stripeObject.cancel_at_period_end,
+            current_period_start: new Date(stripeObject.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(stripeObject.current_period_end * 1000).toISOString(),
+          })
+          .eq("stripe_subscription_id", stripeObject.id);
         break;
       }
 
@@ -127,14 +144,11 @@ export async function POST(req: NextRequest) {
         // ❌ Revoke access to the product
         const stripeObject: Stripe.Subscription = event.data
           .object as Stripe.Subscription;
-        const subscription = await stripe.subscriptions.retrieve(
-          stripeObject.id
-        );
 
         await supabase
-          .from("profiles")
-          .update({ has_access: false })
-          .eq("customer_id", subscription.customer);
+          .from("subscriptions")
+          .update({ status: 'canceled' })
+          .eq("stripe_subscription_id", stripeObject.id);
         break;
       }
 
@@ -143,24 +157,13 @@ export async function POST(req: NextRequest) {
         // ✅ Grant access to the product
         const stripeObject: Stripe.Invoice = event.data
           .object as Stripe.Invoice;
-        const priceId = stripeObject.lines.data[0].price.id;
         const customerId = stripeObject.customer;
 
-        // Find profile where customer_id equals the customerId (in table called 'profiles')
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("customer_id", customerId)
-          .single();
-
-        // Make sure the invoice is for the same plan (priceId) the user subscribed to
-        if (profile.price_id !== priceId) break;
-
-        // Grant the profile access to your product. It's a boolean in the database, but could be a number of credits, etc...
+        // Update subscription status to active
         await supabase
-          .from("profiles")
-          .update({ has_access: true })
-          .eq("customer_id", customerId);
+          .from("subscriptions")
+          .update({ status: 'active' })
+          .eq("stripe_customer_id", customerId);
 
         break;
       }

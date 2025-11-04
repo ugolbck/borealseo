@@ -1,6 +1,6 @@
 export type Theme =
-  | "light"
   | "dark"
+  | "light"
   | "cupcake"
   | "bumblebee"
   | "emerald"

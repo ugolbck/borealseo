@@ -1,89 +1,9 @@
 @import "tailwindcss";
-@plugin "daisyui" {
-  themes: dark --default;
-}
 
 @theme {
-  --font-display: "Satoshi", "sans-serif";
-
-  /* Custom color palette - Dark theme with blue-green accent (northern lights) */
-  --color-primary: #14b8a6; /* Teal - main accent */
-  --color-primary-focus: #0d9488; /* Darker teal */
-  --color-primary-content: #ffffff;
-
-  --color-secondary: #6366f1; /* Indigo for secondary actions */
-  --color-secondary-focus: #4f46e5;
-  --color-secondary-content: #ffffff;
-
-  --color-accent: #22d3ee; /* Cyan accent for highlights */
-  --color-accent-focus: #06b6d4;
-  --color-accent-content: #ffffff;
-
-  --color-neutral: #1f2937; /* Dark gray for backgrounds */
-  --color-neutral-focus: #111827; /* Darker gray */
-  --color-neutral-content: #e5e7eb;
-
-  --color-base-100: #0f172a; /* Very dark blue-gray background */
-  --color-base-200: #1e293b; /* Slightly lighter for cards */
-  --color-base-300: #334155; /* Even lighter for borders */
-  --color-base-content: #f1f5f9; /* Light text */
-
-  --color-info: #3b82f6; /* Blue for info */
-  --color-success: #10b981; /* Green for success */
-  --color-warning: #f59e0b; /* Amber for warnings */
-  --color-error: #ef4444; /* Red for errors */
-
-  --animate-shimmer: shimmer 3s ease-out infinite alternate;
-  --animate-opacity: opacity 0.25s ease-in-out;
-  --animate-appearFromRight: appearFromRight 300ms ease-in-out;
-  --animate-wiggle: wiggle 1.5s ease-in-out infinite;
-  --animate-popup: popup 0.25s ease-in-out;
-  --animate-aurora: aurora 8s ease-in-out infinite;
-
-  @keyframes shimmer {
-    0% { background-position: 0 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
-
-  @keyframes opacity {
-    0% { opacity: 0; }
-    100% { opacity: 1; }
-  }
-
-  @keyframes appearFromRight {
-    0% { opacity: 0.3; transform: translate(15%, 0px); }
-    100% { opacity: 1; transform: translate(0); }
-  }
-
-  @keyframes wiggle {
-    0%, 20%, 80%, 100% { transform: rotate(0deg); }
-    30%, 60% { transform: rotate(-2deg); }
-    40%, 70% { transform: rotate(2deg); }
-    45% { transform: rotate(-4deg); }
-    55% { transform: rotate(4deg); }
-  }
-
-  @keyframes popup {
-    0% { transform: scale(0.8); opacity: 0.8; }
-    50% { transform: scale(1.1); opacity: 1; }
-    100% { transform: scale(1); opacity: 1; }
-  }
-
-  @keyframes aurora {
-    0% {
-      background-position: 0% 50%;
-      filter: hue-rotate(0deg);
-    }
-    50% {
-      background-position: 100% 50%;
-      filter: hue-rotate(30deg);
-    }
-    100% {
-      background-position: 0% 50%;
-      filter: hue-rotate(0deg);
-    }
-  }
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --default-font-size: 0.875rem; /* 14px */
 }
 
 html,
@@ -91,17 +11,18 @@ body {
   scroll-behavior: smooth !important;
 }
 
-progress::-webkit-progress-value {
-  transition: 0.6s width ease-out;
+@keyframes shimmer {
+  0% { background-position: 0 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
-/* Northern lights inspired gradient */
+/* Gradient button */
 .btn-gradient {
-  background: linear-gradient(135deg, #14b8a6, #06b6d4, #3b82f6, #6366f1, #8b5cf6) !important;
+  background: linear-gradient(135deg, #14b8a6, #06b6d4, #3b82f6) !important;
   background-size: 300% 300% !important;
-  animation: var(--animate-shimmer) !important;
+  animation: shimmer 3s ease-out infinite alternate !important;
   border: 0 !important;
-  border-color: transparent !important;
   color: white !important;
   box-shadow: 0 8px 16px -4px rgb(20 184 166 / 0.3), 0 4px 6px -2px rgb(20 184 166 / 0.2) !important;
 }
@@ -111,47 +32,109 @@ progress::-webkit-progress-value {
   box-shadow: 0 12px 24px -4px rgb(20 184 166 / 0.4), 0 6px 8px -2px rgb(20 184 166 / 0.3) !important;
 }
 
-.btn-gradient:disabled {
-  background: rgb(107 114 128 / 0.3) !important;
-  color: rgb(156 163 175) !important;
+/* shadcn/ui CSS variables - Pure neutral colors (0 hue, 0 saturation) */
+:root,
+.dark {
+  /* Base colors - Pure neutral grays */
+  --background: 0 0% 7%; /* #121212 - Darkest background */
+  --foreground: 0 0% 98%; /* #fafafa - Light text */
+
+  --card: 0 0% 10%; /* #1a1a1a - Card background */
+  --card-foreground: 0 0% 98%; /* #fafafa */
+
+  --popover: 0 0% 12%; /* #1f1f1f - Slightly lighter for popovers */
+  --popover-foreground: 0 0% 98%; /* #fafafa */
+
+  --primary: 174 72% 46%; /* #0d9488 - Darker teal for better contrast */
+  --primary-foreground: 0 0% 100%; /* #ffffff */
+
+  --secondary: 0 0% 15%; /* #262626 */
+  --secondary-foreground: 0 0% 98%; /* #fafafa */
+
+  --muted: 0 0% 15%; /* #262626 - Muted background */
+  --muted-foreground: 0 0% 55%; /* #8c8c8c - Darker muted text */
+
+  --accent: 0 0% 18%; /* #2e2e2e - Accent background */
+  --accent-foreground: 0 0% 98%; /* #fafafa */
+
+  --destructive: 0 72% 51%; /* #ef4444 */
+  --destructive-foreground: 0 0% 98%; /* #fafafa */
+
+  --border: 0 0% 20%; /* #333333 */
+  --input: 0 0% 20%; /* #333333 */
+  --ring: 174 72% 46%; /* #0d9488 - Darker teal */
+
+  --radius: 0.5rem;
+
+  /* Sidebar colors - Pure neutral grays */
+  --sidebar: 0 0% 7%; /* #121212 - Darkest */
+  --sidebar-foreground: 0 0% 98%; /* #fafafa */
+  --sidebar-primary: 174 72% 46%; /* #0d9488 - Darker teal */
+  --sidebar-primary-foreground: 0 0% 100%; /* #ffffff */
+  --sidebar-accent: 0 0% 15%; /* #262626 - Hover state */
+  --sidebar-accent-foreground: 0 0% 98%; /* #fafafa */
+  --sidebar-border: 0 0% 18%; /* #2e2e2e */
+  --sidebar-ring: 174 72% 46%; /* #0d9488 */
 }
 
-/* Aurora effect for hero sections */
-.aurora-bg {
-  background: linear-gradient(135deg, #0f172a, #1e293b, #0f172a);
-  background-size: 400% 400%;
-  position: relative;
+@theme inline {
+  /* Map CSS variables to Tailwind */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-sidebar: hsl(var(--sidebar));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
 }
 
-.aurora-bg::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(135deg,
-    rgba(20, 184, 166, 0.1) 0%,
-    rgba(99, 102, 241, 0.1) 25%,
-    rgba(139, 92, 246, 0.1) 50%,
-    rgba(59, 130, 246, 0.1) 75%,
-    rgba(20, 184, 166, 0.1) 100%
-  );
-  background-size: 400% 400%;
-  animation: var(--animate-aurora);
-  opacity: 0.6;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground text-sm;
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /* Ensure html also has dark background */
+  html {
+    @apply bg-background;
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  }
 }
 
-/* Glowing card effect */
-.card-glow {
-  box-shadow: 0 0 20px rgba(20, 184, 166, 0.1);
-  border: 1px solid rgba(20, 184, 166, 0.2);
-  transition: all 0.3s ease;
+/* Fix for dropdown menus and popovers to have proper background */
+[data-radix-popper-content-wrapper] {
+  z-index: 50;
 }
 
-.card-glow:hover {
-  box-shadow: 0 0 30px rgba(20, 184, 166, 0.2);
-  border-color: rgba(20, 184, 166, 0.4);
-  transform: translateY(-2px);
+/* Ensure cards have visible background */
+.bg-muted\/50 {
+  background-color: hsl(var(--muted) / 0.5);
 }
 
-.btn {
-  text-transform: capitalize !important;
+/* Fix sidebar inset background */
+[data-sidebar="inset"] {
+  background-color: hsl(var(--background));
 }

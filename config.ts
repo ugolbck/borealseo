@@ -7,7 +7,7 @@ const config = {
   appDescription:
     "AI-powered SEO content planning and blog generation tool. Create SEO-optimized content that ranks and drives organic traffic.",
   // REQUIRED (no https://, not trialing slash at the end, just the naked domain)
-  domainName: "seofor.dev",
+  domainName: "borealseo.com",
   crisp: {
     // Crisp website ID. IF YOU DON'T USE CRISP: just remove this => Then add a support email in this config file (resend.supportEmail) otherwise customer support won't work.
     id: "",

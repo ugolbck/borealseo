@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import {
   Breadcrumb,
@@ -15,11 +14,11 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 interface DashboardNavProps {
-  isTrialing: boolean;
-  trialDaysRemaining: number;
+  isTrialing?: boolean;
+  trialDaysRemaining?: number;
 }
 
-export function DashboardNav({ isTrialing, trialDaysRemaining }: DashboardNavProps) {
+export function DashboardNav(_props: DashboardNavProps) {
   const pathname = usePathname();
 
   const getBreadcrumbs = () => {
@@ -74,14 +73,6 @@ export function DashboardNav({ isTrialing, trialDaysRemaining }: DashboardNavPro
           </BreadcrumbList>
         </Breadcrumb>
       </div>
-
-      {isTrialing && (
-        <Link href="/pricing">
-          <Button size="sm" className="text-xs h-8 bg-primary hover:bg-primary/90">
-            Upgrade Now
-          </Button>
-        </Link>
-      )}
     </header>
   );
 }

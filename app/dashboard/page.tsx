@@ -32,21 +32,12 @@ export default async function Dashboard() {
   const access = await getUserAccess(user.id);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">{website.name}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{website.url}</p>
-        </div>
-      </div>
-
-      <Suspense fallback={<CalendarSkeleton />}>
-        <ContentCalendar
-          websiteId={website.id}
-          access={access}
-        />
-      </Suspense>
-    </div>
+    <Suspense fallback={<CalendarSkeleton />}>
+      <ContentCalendar
+        websiteId={website.id}
+        access={access}
+      />
+    </Suspense>
   );
 }
 

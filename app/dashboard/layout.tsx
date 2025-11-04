@@ -55,6 +55,8 @@ export default async function DashboardLayout({
         }}
         websites={websites || []}
         activeWebsiteId={firstWebsite?.id || ""}
+        isTrialing={access.isTrialing}
+        trialDaysRemaining={access.trialDaysRemaining}
       />
       <SidebarInset className="bg-background">
         <DashboardNav

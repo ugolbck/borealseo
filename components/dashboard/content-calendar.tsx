@@ -82,7 +82,7 @@ export async function ContentCalendar({ websiteId, access }: ContentCalendarProp
   });
 
   // Generate all 7 days with placeholders for missing dates
-  const calendarItems = [];
+  const calendarItems: any[] = [];
   for (let i = -1; i <= 5; i++) {
     const date = new Date(now);
     date.setDate(date.getDate() + i);
@@ -107,20 +107,25 @@ export async function ContentCalendar({ websiteId, access }: ContentCalendarProp
     }
   }
 
-  // Filter for trial users: lock future content
+  // Filter for trial users: only show 2 keywords with data, rest are empty placeholders
   const filteredItems = access.isTrialing
-    ? calendarItems.map((item) => {
-        const itemDate = new Date(item.scheduledFor);
-        itemDate.setHours(0, 0, 0, 0);
-        const today = new Date(now);
-        today.setHours(0, 0, 0, 0);
-
-        // Show yesterday, today, and tomorrow for trial users
-        if (itemDate < today && itemDate.toDateString() !== new Date(today.setDate(today.getDate() - 1)).toDateString()) {
-          return { ...item, isLocked: true };
-        }
-        if (itemDate > new Date(now.setDate(now.getDate() + 1))) {
-          return { ...item, isLocked: true };
+    ? calendarItems.map((item, index) => {
+        // For trial users, only show keyword data for the first 2 non-empty items
+        if (!item.isEmpty) {
+          const nonEmptyIndex = calendarItems.slice(0, index + 1).filter(i => !i.isEmpty).length;
+          if (nonEmptyIndex > 2) {
+            // Convert this to an empty placeholder
+            return {
+              ...item,
+              isEmpty: true,
+              title: "",
+              keyword: "",
+              searchVolume: 0,
+              difficulty: 0,
+              articleId: null,
+              wordCount: null,
+            };
+          }
         }
         return item;
       })

@@ -114,14 +114,14 @@ export function CalendarTimeline({ items }: CalendarTimelineProps) {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+    <div className="flex items-center justify-center min-h-[calc(100vh-200px)] px-16">
       <Carousel
         opts={{
           align: "center",
           loop: false,
           startIndex: todayIndex >= 0 ? todayIndex : 0,
         }}
-        className="w-full max-w-5xl"
+        className="w-full max-w-6xl relative"
       >
         <CarouselContent className="-ml-4">
           {items.map((item) => {
@@ -168,13 +168,6 @@ export function CalendarTimeline({ items }: CalendarTimelineProps) {
                         </>
                       ) : (
                         <>
-                          {/* Title */}
-                          <h3 className="text-sm font-semibold leading-tight line-clamp-2">
-                            {item.title}
-                          </h3>
-
-                          <Separator />
-
                           {/* Keyword info */}
                           <div className="space-y-3 flex-1">
                             <div>
@@ -251,8 +244,8 @@ export function CalendarTimeline({ items }: CalendarTimelineProps) {
             );
           })}
         </CarouselContent>
-        <CarouselPrevious className="left-0" />
-        <CarouselNext className="right-0" />
+        <CarouselPrevious className="-left-12" />
+        <CarouselNext className="-right-12" />
       </Carousel>
     </div>
   );

@@ -37,7 +37,9 @@ export interface ConfigProps {
       name: string;
       description?: string;
       price: number;
-      priceAnchor?: number;
+      priceAnchor?: number | null;
+      interval?: string;
+      isLocked?: boolean;
       features: {
         name: string;
       }[];

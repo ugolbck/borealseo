@@ -41,8 +41,10 @@ interface CalendarTimelineProps {
   items: CalendarItem[];
 }
 
-export function CalendarTimeline({ items }: CalendarTimelineProps) {
+export function CalendarTimeline({ items: initialItems }: CalendarTimelineProps) {
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [changingKeywordId, setChangingKeywordId] = useState<string | null>(null);
+  const [items, setItems] = useState<CalendarItem[]>(initialItems);
 
   const handleGenerateArticle = async (planId: string) => {
     setGeneratingId(planId);
@@ -65,6 +67,44 @@ export function CalendarTimeline({ items }: CalendarTimelineProps) {
       toast.error(error.message || "Failed to generate article");
     } finally {
       setGeneratingId(null);
+    }
+  };
+
+  const handleChangeKeyword = async (planId: string) => {
+    setChangingKeywordId(planId);
+    try {
+      const response = await fetch(`/api/content-plan/change-keyword`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contentPlanId: planId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to change keyword");
+      }
+
+      // Update the items state with the new keyword data
+      setItems(prevItems =>
+        prevItems.map(item =>
+          item.id === planId
+            ? {
+                ...item,
+                title: data.contentPlan.title,
+                keyword: data.contentPlan.keyword,
+                searchVolume: data.contentPlan.searchVolume,
+                difficulty: data.contentPlan.difficulty,
+              }
+            : item
+        )
+      );
+
+      toast.success("Keyword changed successfully!");
+    } catch (error: any) {
+      toast.error(error.message || "Failed to change keyword");
+    } finally {
+      setChangingKeywordId(null);
     }
   };
 
@@ -231,9 +271,20 @@ export function CalendarTimeline({ items }: CalendarTimelineProps) {
                               size="sm"
                               variant="ghost"
                               className="w-full text-xs h-7 text-muted-foreground hover:text-foreground cursor-pointer"
+                              onClick={() => handleChangeKeyword(item.id)}
+                              disabled={changingKeywordId === item.id || !!item.articleId}
                             >
-                              <RefreshCw className="h-3 w-3 mr-1.5" />
-                              Change Keyword
+                              {changingKeywordId === item.id ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                                  Changing...
+                                </>
+                              ) : (
+                                <>
+                                  <RefreshCw className="h-3 w-3 mr-1.5" />
+                                  Change Keyword
+                                </>
+                              )}
                             </Button>
                           </div>
                         </>

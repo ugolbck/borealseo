@@ -41,7 +41,7 @@ export default function Page() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 mt-4">
-              <Link href="/signin">
+              <Link href="/pricing">
                 <Button size="lg" className="btn-gradient text-lg px-8 cursor-pointer">
                   Start Free Trial
                   <TrendingUp className="ml-2 h-5 w-5" />
@@ -109,7 +109,7 @@ export default function Page() {
             <p className="text-lg text-base-content/70 mb-8">
               Join hundreds of developers and app creators driving organic traffic with AI-powered content
             </p>
-            <Link href="/signin">
+            <Link href="/pricing">
               <Button size="lg" className="btn-gradient text-lg px-8 cursor-pointer">
                 Get Started Free
                 <Sparkles className="ml-2 h-5 w-5" />

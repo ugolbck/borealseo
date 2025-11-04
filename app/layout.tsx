@@ -1,14 +1,16 @@
 import { ReactNode } from "react";
 import { Inter } from "next/font/google";
+import { GeistMono } from "geist/font/mono";
 import { Viewport } from "next";
 import { getSEOTags } from "@/libs/seo";
 import ClientLayout from "@/components/LayoutClient";
 import config from "@/config";
 import "./globals.css";
 
-const font = Inter({
+const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-inter"
+  variable: "--font-inter",
+  display: "swap",
 });
 
 export const viewport: Viewport = {
@@ -26,9 +28,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 	return (
 		<html
 			lang="en"
-			className={`dark ${font.className}`}
+			className={`dark ${inter.variable} ${GeistMono.variable}`}
 		>
-			<body className="dark">
+			<body className="dark font-sans">
 				{/* ClientLayout contains all the client wrappers (Crisp chat support, toast messages, tooltips, etc.) */}
 				<ClientLayout>{children}</ClientLayout>
 			</body>

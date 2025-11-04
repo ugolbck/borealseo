@@ -20,7 +20,7 @@ const config = {
       {
         // REQUIRED — we use this to find the plan in the webhook (for instance if you want to update the user's credits based on the plan)
         priceId:
-          process.env.STRIPE_MONTHLY_PRICE_ID || "",
+          process.env.STRIPE_WEEKLY_PRICE_ID || "",
         //  REQUIRED - Name of the plan, displayed on the pricing page
         name: "Weekly",
         // A friendly description of the plan, displayed on the pricing page. Tip: explain why this plan and not others
@@ -28,34 +28,16 @@ const config = {
         // The price you want to display, the one user will be charged on Stripe.
         price: 14.99,
         // If you have an anchor price (i.e. $29) that you want to display crossed out, put it here. Otherwise, leave it empty
-        priceAnchor: 29,
+        priceAnchor: null,
+        interval: "week",
         features: [
           {
             name: "AI-powered content generation",
           },
-          { name: "Keyword research with DataForSEO" },
+          { name: "Keyword research adapted to your niche" },
           { name: "7-day content calendar" },
           { name: "SEO optimization suggestions" },
-          { name: "Unlimited article generations" },
-        ],
-      },
-      {
-        priceId:
-          process.env.STRIPE_LTD_PRICE_ID || "",
-        // This plan will look different on the pricing page, it will be highlighted. You can only have one plan with isFeatured: true
-        isFeatured: true,
-        name: "Lifetime Deal",
-        description: "One-time payment, lifetime access",
-        price: 99,
-        priceAnchor: 299,
-        features: [
-          {
-            name: "Everything in Weekly",
-          },
-          { name: "Lifetime access to all features" },
-          { name: "Priority support" },
-          { name: "Early access to new features" },
-          { name: "No recurring fees" },
+          { name: "Unlimited keyword changes" },
         ],
       },
     ],

@@ -5,6 +5,7 @@ import { needsUpgrade } from "@/libs/subscription";
 import { AppSidebar } from "@/components/app-sidebar";
 import { DashboardNav } from "@/components/dashboard/dashboard-nav-new";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { BreadcrumbProvider } from "@/components/dashboard/breadcrumb-context";
 
 export default async function DashboardLayout({
   children,
@@ -42,22 +43,24 @@ export default async function DashboardLayout({
   const firstWebsite = websites?.[0];
 
   return (
-    <SidebarProvider>
-      <AppSidebar
-        user={{
-          name: user.user_metadata?.full_name || null,
-          email: user.email!,
-          avatar: user.user_metadata?.avatar_url,
-        }}
-        websites={websites || []}
-        activeWebsiteId={firstWebsite?.id || ""}
-      />
-      <SidebarInset className="bg-background">
-        <DashboardNav />
-        <main className="flex-1 p-6">
-          {children}
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    <BreadcrumbProvider>
+      <SidebarProvider>
+        <AppSidebar
+          user={{
+            name: user.user_metadata?.full_name || null,
+            email: user.email!,
+            avatar: user.user_metadata?.avatar_url,
+          }}
+          websites={websites || []}
+          activeWebsiteId={firstWebsite?.id || ""}
+        />
+        <SidebarInset className="bg-background">
+          <DashboardNav />
+          <main className="flex-1 p-6">
+            {children}
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </BreadcrumbProvider>
   );
 }

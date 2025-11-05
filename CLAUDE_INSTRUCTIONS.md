@@ -6,7 +6,6 @@ You are working on a **ShipFast TypeScript SaaS boilerplate** that has been upgr
 - **React 19**
 - **TypeScript 5.9+**
 - **Tailwind CSS 4.1+** (CSS-first configuration)
-- **DaisyUI 5.0+**
 - **Supabase** for authentication and database
 - **Stripe** for payments
 - **Resend** for emails

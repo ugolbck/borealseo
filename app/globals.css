@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
@@ -122,6 +123,211 @@ body {
   html {
     @apply bg-background;
     font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  }
+
+  /* Custom prose styles for editor */
+  .prose {
+    @apply text-foreground;
+    max-width: none;
+  }
+
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .prose h4,
+  .prose h5,
+  .prose h6 {
+    @apply text-foreground font-bold;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .prose h1 {
+    @apply text-3xl mb-4 mt-6;
+  }
+
+  .prose h2 {
+    @apply text-2xl mb-3 mt-5;
+  }
+
+  .prose h3 {
+    @apply text-xl font-semibold mb-2 mt-4;
+  }
+
+  .prose p {
+    @apply text-foreground mb-4 leading-7;
+  }
+
+  .prose strong,
+  .prose b {
+    @apply text-foreground font-bold;
+    font-weight: 600 !important;
+  }
+
+  .prose em,
+  .prose i {
+    @apply text-foreground italic;
+  }
+
+  .prose code {
+    @apply bg-secondary px-2 py-0.5 rounded font-mono border border-border/50;
+    color: #22d3ee !important; /* bright cyan for visibility */
+    font-size: 0.875em;
+    font-weight: 500;
+  }
+
+  .prose pre {
+    @apply bg-secondary text-foreground p-4 rounded-lg overflow-x-auto mb-4 border border-border;
+  }
+
+  .prose pre code {
+    @apply bg-transparent p-0 border-0;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .prose a {
+    @apply text-primary underline hover:text-primary/80 transition-colors;
+  }
+
+  .prose ul {
+    @apply mb-4 space-y-2;
+    list-style: none;
+    padding-left: 0;
+  }
+
+  .prose ul > li {
+    @apply text-foreground pl-6 relative;
+    list-style: none;
+  }
+
+  .prose ul > li::before {
+    content: "•";
+    @apply absolute font-bold;
+    left: 0;
+    font-size: 1.2em;
+    line-height: 1.5;
+    color: #22d3ee !important; /* bright cyan */
+  }
+
+  .prose ul > li > p {
+    @apply inline;
+    margin: 0;
+  }
+
+  .prose ol {
+    @apply mb-4 space-y-2;
+    list-style: none !important;
+    counter-reset: list-counter;
+    padding-left: 0 !important;
+  }
+
+  .prose ol > li {
+    @apply text-foreground relative;
+    counter-increment: list-counter;
+    list-style: none !important;
+    padding-left: 1.5rem !important;
+    display: block !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .prose ol > li::marker {
+    display: none !important;
+    content: "" !important;
+  }
+
+  .prose ol > li::before {
+    content: counter(list-counter) ". " !important;
+    @apply absolute font-semibold;
+    left: 0;
+    top: 0;
+    color: #22d3ee !important; /* bright cyan */
+    display: inline-block !important;
+  }
+
+  .prose ol > li > p {
+    display: inline !important;
+    margin: 0 !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* Force list item text color at all levels */
+  .prose ol > li,
+  .prose ol > li > *,
+  .prose ol > li p {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  /* Remove any data-list-item attributes that might add numbers */
+  .prose ol > li[data-list-item]::before {
+    content: counter(list-counter) ". " !important;
+  }
+
+  .prose li {
+    @apply text-foreground leading-7;
+  }
+
+  /* Nested lists */
+  .prose ul ul,
+  .prose ol ol,
+  .prose ul ol,
+  .prose ol ul {
+    @apply mt-2 mb-0;
+  }
+
+  /* Remove default list styling completely */
+  .prose ul[data-type="bulletList"],
+  .prose ol[data-type="orderedList"] {
+    list-style: none !important;
+  }
+
+  .prose ul[data-type="bulletList"] > li,
+  .prose ol[data-type="orderedList"] > li {
+    list-style: none !important;
+  }
+
+  .prose blockquote {
+    @apply border-l-4 border-primary/50 pl-4 italic text-muted-foreground my-4;
+  }
+
+  .prose hr {
+    @apply border-border my-6;
+  }
+
+  /* Force code and list colors with higher specificity */
+  .ProseMirror code,
+  .tiptap code,
+  [contenteditable="true"] code {
+    color: #22d3ee !important;
+  }
+
+  .ProseMirror ol > li::before,
+  .tiptap ol > li::before,
+  [contenteditable="true"] ol > li::before {
+    color: #22d3ee !important;
+  }
+
+  .ProseMirror ul > li::before,
+  .tiptap ul > li::before,
+  [contenteditable="true"] ul > li::before {
+    color: #22d3ee !important;
+  }
+
+  /* Force list item TEXT color (not the counter) */
+  .ProseMirror ol > li,
+  .ProseMirror ol > li > *,
+  .tiptap ol > li,
+  .tiptap ol > li > *,
+  [contenteditable="true"] ol > li,
+  [contenteditable="true"] ol > li > * {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .ProseMirror ul > li,
+  .ProseMirror ul > li > *,
+  .tiptap ul > li,
+  .tiptap ul > li > *,
+  [contenteditable="true"] ul > li,
+  [contenteditable="true"] ul > li > * {
+    color: hsl(var(--foreground)) !important;
   }
 }
 

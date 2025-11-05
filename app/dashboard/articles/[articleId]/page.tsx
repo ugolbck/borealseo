@@ -1,11 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Calendar, FileText } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import ReactMarkdown from "react-markdown";
+import { ArticleEditor } from "@/components/editor/article-editor";
 
 export const dynamic = "force-dynamic";
 
@@ -49,55 +47,17 @@ export default async function ArticlePage({
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-5xl mx-auto">
       <Link
         href="/dashboard/articles"
-        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
       >
         <ArrowLeft className="h-4 w-4" />
         Back to Articles
       </Link>
 
-      <Card className="p-6 space-y-6">
-        <div className="space-y-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold mb-2">{article.title}</h1>
-              {article.meta_description && (
-                <p className="text-sm text-muted-foreground">
-                  {article.meta_description}
-                </p>
-              )}
-            </div>
-            <Badge variant={article.status === "published" ? "default" : "secondary"}>
-              {article.status}
-            </Badge>
-          </div>
-
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            {article.content_plan?.target_keyword && (
-              <Badge variant="outline" className="font-normal">
-                {article.content_plan.target_keyword}
-              </Badge>
-            )}
-            <Separator orientation="vertical" className="h-4" />
-            <span className="flex items-center gap-1">
-              <FileText className="h-3 w-3" />
-              {article.word_count?.toLocaleString() || 0} words
-            </span>
-            <Separator orientation="vertical" className="h-4" />
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3 w-3" />
-              {new Date(article.created_at).toLocaleDateString()}
-            </span>
-          </div>
-        </div>
-
-        <Separator />
-
-        <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none">
-          <ReactMarkdown>{article.content}</ReactMarkdown>
-        </div>
+      <Card className="p-6">
+        <ArticleEditor article={article} />
       </Card>
     </div>
   );

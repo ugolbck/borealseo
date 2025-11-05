@@ -1,5 +1,5 @@
 {
-  "name": "ship-fast-code",
+  "name": "borealseo",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -28,6 +28,14 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@supabase/ssr": "^0.4.0",
     "@supabase/supabase-js": "^2.45.0",
+    "@tailwindcss/typography": "^0.5.19",
+    "@tiptap/extension-link": "^3.10.2",
+    "@tiptap/extension-placeholder": "^3.10.2",
+    "@tiptap/extension-text-align": "^3.10.2",
+    "@tiptap/extension-typography": "^3.10.2",
+    "@tiptap/extension-underline": "^3.10.2",
+    "@tiptap/react": "^3.10.2",
+    "@tiptap/starter-kit": "^3.10.2",
     "axios": "^1.13.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -43,6 +51,7 @@
     "nextjs-toploader": "^3.7.15",
     "nodemailer": "^6.9.17",
     "openai": "^6.8.0",
+    "prosemirror-markdown": "^1.13.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.6.0",
@@ -52,6 +61,7 @@
     "resend": "^4.0.1",
     "stripe": "^13.11.0",
     "tailwind-merge": "^3.3.1",
+    "tiptap-markdown": "^0.9.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

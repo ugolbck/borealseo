@@ -12,9 +12,11 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
+import { useBreadcrumb } from "./breadcrumb-context";
 
 export function DashboardNav() {
   const pathname = usePathname();
+  const { articleTitle } = useBreadcrumb();
 
   const getBreadcrumbs = () => {
     const segments = pathname.split("/").filter(Boolean);
@@ -33,7 +35,7 @@ export function DashboardNav() {
       return [
         { label: "Calendar", href: "/dashboard", isActive: false },
         { label: "Articles", href: "/dashboard/articles", isActive: false },
-        { label: "Article", href: pathname, isActive: true },
+        { label: articleTitle || "Article", href: pathname, isActive: true },
       ];
     }
 

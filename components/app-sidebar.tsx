@@ -1,10 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Calendar, FileText, Zap } from "lucide-react";
+import { Calendar, FileText } from "lucide-react";
 import { NavUser } from "@/components/nav-user";
 import { ProjectSwitcher } from "@/components/project-switcher";
-import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -30,11 +29,9 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
     url: string;
   }[];
   activeWebsiteId: string;
-  isTrialing?: boolean;
-  trialDaysRemaining?: number;
 }
 
-export function AppSidebar({ user, websites, activeWebsiteId, isTrialing, trialDaysRemaining, ...props }: AppSidebarProps) {
+export function AppSidebar({ user, websites, activeWebsiteId, ...props }: AppSidebarProps) {
   const pathname = usePathname();
 
   const navItems = [
@@ -74,16 +71,6 @@ export function AppSidebar({ user, websites, activeWebsiteId, isTrialing, trialD
         </SidebarMenu>
       </SidebarContent>
       <SidebarFooter className="mt-auto">
-        {isTrialing && trialDaysRemaining !== undefined && (
-          <div className="px-3 py-2">
-            <Link href="/pricing">
-              <Button size="sm" className="w-full text-xs h-8 cursor-pointer">
-                <Zap className="h-3 w-3 mr-1.5" />
-                Upgrade • {trialDaysRemaining}d left
-              </Button>
-            </Link>
-          </div>
-        )}
         <NavUser user={user} />
       </SidebarFooter>
       <SidebarRail />

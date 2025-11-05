@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import { OnboardingForm } from "@/components/onboarding/onboarding-form";
+import { needsUpgrade } from "@/libs/subscription";
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
@@ -10,14 +11,20 @@ export default async function OnboardingPage() {
     redirect("/signin");
   }
 
-  // Check if user already completed onboarding
-  const { data: profile } = await supabase
-    .from("user_profiles")
-    .select("has_completed_onboarding")
-    .eq("id", user.id)
-    .single();
+  // Check if user has active subscription
+  const requiresUpgrade = await needsUpgrade(user.id);
 
-  if (profile?.has_completed_onboarding) {
+  if (requiresUpgrade) {
+    redirect("/pricing");
+  }
+
+  // Check if user has any websites (means they completed onboarding)
+  const { data: websites } = await supabase
+    .from("websites")
+    .select("id")
+    .eq("user_id", user.id);
+
+  if (websites && websites.length > 0) {
     redirect("/dashboard");
   }
 

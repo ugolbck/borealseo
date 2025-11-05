@@ -157,13 +157,10 @@ export function OnboardingForm() {
             ) : (
               <>
                 <Sparkles className="mr-2 h-4 w-4" />
-                Start Your Free Trial
+                Complete Setup
               </>
             )}
           </Button>
-          <p className="text-xs text-center text-base-content/60 mt-3">
-            2-day free trial • No credit card required
-          </p>
         </div>
       </form>
     </Card>

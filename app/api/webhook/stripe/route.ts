@@ -12,6 +12,7 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 // By default, it'll store the user in the database
 // See more: https://shipfa.st/docs/features/payments
 export async function POST(req: NextRequest) {
+  console.log("🔔 Webhook received");
   const body = await req.text();
 
   const headersList = await headers();
@@ -35,16 +36,19 @@ export async function POST(req: NextRequest) {
   // verify Stripe event is legit
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    console.log("✅ Webhook signature verified");
   } catch (err) {
-    console.error(`Webhook signature verification failed. ${err.message}`);
+    console.error(`❌ Webhook signature verification failed. ${err.message}`);
     return NextResponse.json({ error: err.message }, { status: 400 });
   }
 
   eventType = event.type;
+  console.log(`📨 Event type: ${eventType}`);
 
   try {
     switch (eventType) {
       case "checkout.session.completed": {
+        console.log("💳 Processing checkout.session.completed");
         // First payment is successful and a subscription is created (if mode was set to "subscription" in ButtonCheckout)
         // ✅ Grant access to the product
         const stripeObject: Stripe.Checkout.Session = event.data
@@ -57,11 +61,19 @@ export async function POST(req: NextRequest) {
         const userId = stripeObject.client_reference_id;
         const plan = configFile.stripe.plans.find((p) => p.priceId === priceId);
 
+        console.log(`Customer ID: ${customerId}`);
+        console.log(`Price ID: ${priceId}`);
+        console.log(`User ID: ${userId}`);
+        console.log(`Plan found: ${plan ? 'Yes' : 'No'}`);
+
         const customer = (await stripe.customers.retrieve(
           customerId
         )) as Stripe.Customer;
 
-        if (!plan) break;
+        if (!plan) {
+          console.error("❌ Plan not found for priceId:", priceId);
+          break;
+        }
 
         let user;
         if (!userId) {
@@ -84,11 +96,15 @@ export async function POST(req: NextRequest) {
           user = data?.user;
         }
 
-        if (!user) break;
+        if (!user) {
+          console.error("❌ User not found");
+          break;
+        }
+
+        console.log(`✅ User found: ${user.id} (${user.email})`);
 
         // Determine plan type and subscription details
-        const planType = priceId === process.env.STRIPE_LTD_PRICE_ID ? 'ltd' :
-                        priceId === process.env.STRIPE_MONTHLY_PRICE_ID ? 'weekly' : 'weekly';
+        const planType = priceId === process.env.STRIPE_LTD_PRICE_ID ? 'ltd' : 'weekly';
 
         // Create or update subscription record
         const subscriptionData = {
@@ -102,9 +118,20 @@ export async function POST(req: NextRequest) {
           current_period_end: new Date(Date.now() + (planType === 'ltd' ? 100 * 365 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000)).toISOString(),
         };
 
-        await supabase
+        console.log("💾 Upserting subscription...");
+        const { error: subError } = await supabase
           .from("subscriptions")
           .upsert(subscriptionData, { onConflict: 'user_id' });
+
+        if (subError) {
+          console.error("❌ Subscription upsert error:", subError);
+          break;
+        }
+
+        console.log("✅ Subscription created/updated");
+
+        // Note: Content generation happens after onboarding, not here
+        // Users must complete onboarding first to create a website
 
         // Extra: send email with user link, product page, etc...
         // try {
@@ -164,6 +191,9 @@ export async function POST(req: NextRequest) {
           .from("subscriptions")
           .update({ status: 'active' })
           .eq("stripe_customer_id", customerId);
+
+        // Note: Content generation happens during onboarding for initial setup
+        // For renewals, we could generate more content here in the future
 
         break;
       }

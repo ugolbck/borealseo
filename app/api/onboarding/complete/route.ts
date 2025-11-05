@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/libs/supabase/server";
-import { dataForSEOClient } from "@/libs/dataforseo";
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,59 +27,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Please provide at least 3 keywords" }, { status: 400 });
     }
 
+    // Check if user has active subscription
+    const { data: subscription } = await supabase
+      .from("subscriptions")
+      .select("status")
+      .eq("user_id", user.id)
+      .single();
+
+    if (!subscription || subscription.status !== 'active') {
+      return NextResponse.json(
+        { error: "Active subscription required. Please subscribe to continue." },
+        { status: 403 }
+      );
+    }
+
     // Check if user already completed onboarding
     const { data: profile } = await supabase
       .from("user_profiles")
-      .select("has_completed_onboarding, trial_started_at, trial_ends_at")
+      .select("has_completed_onboarding")
       .eq("id", user.id)
       .single();
-
-    // If already completed, just create new website
-    if (profile?.has_completed_onboarding) {
-      const { data: website, error: websiteError } = await supabase
-        .from("websites")
-        .insert({
-          user_id: user.id,
-          name: websiteName,
-          url: websiteUrl,
-          description,
-          target_audience: targetAudience,
-          initial_keywords: keywordsArray,
-        })
-        .select()
-        .single();
-
-      if (websiteError || !website) {
-        throw new Error("Failed to create website");
-      }
-
-      // Generate keywords and content plan
-      await generateContentPlan(supabase, website.id, keywordsArray, targetAudience);
-
-      return NextResponse.json({
-        success: true,
-        projectId: website.id,
-        message: "New project created successfully!",
-      });
-    }
-
-    // First-time onboarding: Update profile and start trial
-    const trialStartDate = new Date();
-    const trialEndDate = new Date();
-    trialEndDate.setDate(trialEndDate.getDate() + 2); // 2-day trial
-
-    const { error: profileError } = await supabase
-      .from("user_profiles")
-      .update({
-        has_completed_onboarding: true,
-        trial_started_at: trialStartDate.toISOString(),
-        trial_ends_at: trialEndDate.toISOString(),
-      })
-      .eq("id", user.id);
-
-    if (profileError) {
-      throw new Error("Failed to update profile");
-    }
 
     // Create website
     const { data: website, error: websiteError } = await supabase
@@ -100,13 +66,37 @@ export async function POST(request: NextRequest) {
       throw new Error("Failed to create website");
     }
 
-    // Generate keywords and content plan
-    await generateContentPlan(supabase, website.id, keywordsArray, targetAudience);
+    // Mark onboarding as complete if first time
+    if (!profile?.has_completed_onboarding) {
+      await supabase
+        .from("user_profiles")
+        .update({ has_completed_onboarding: true })
+        .eq("id", user.id);
+    }
+
+    // Generate initial content for this website using NEW system
+    console.log("📅 Initializing content plan for website:", website.id);
+    const { initializeContentPlan } = await import("@/libs/content-generation-new");
+    const result = await initializeContentPlan(
+      website.id,
+      user.id,
+      keywordsArray,
+      targetAudience
+    );
+
+    if (!result.success) {
+      console.error("Failed to initialize content plan:", result.error);
+      // Don't fail the whole onboarding, just log the error
+    } else {
+      console.log(`✅ Content plan initialized successfully`);
+    }
 
     return NextResponse.json({
       success: true,
       projectId: website.id,
-      message: "Onboarding completed! Starting your 2-day trial.",
+      message: profile?.has_completed_onboarding
+        ? "New project created successfully!"
+        : "Setup complete! Your keywords are being generated.",
     });
   } catch (error: any) {
     console.error("Onboarding error:", error);
@@ -115,68 +105,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-async function generateContentPlan(
-  supabase: any,
-  websiteId: string,
-  seedKeywords: string[],
-  targetAudience: string
-) {
-  try {
-    // Research keywords using DataForSEO
-    const researchResults = await dataForSEOClient.researchKeywords(seedKeywords, targetAudience);
-
-    if (researchResults.length === 0) {
-      console.warn("No keywords generated from DataForSEO");
-      return;
-    }
-
-    // Insert keywords into database
-    const keywordInserts = researchResults.map(kw => ({
-      website_id: websiteId,
-      keyword: kw.keyword,
-      search_volume: kw.searchVolume,
-      difficulty: kw.difficulty,
-      is_auto_discovered: true,
-    }));
-
-    await supabase.from("keywords").insert(keywordInserts);
-
-    // Generate 7-day content calendar from top 7 keywords
-    const top7Keywords = researchResults.slice(0, 7);
-    const contentPlanInserts = top7Keywords.map((kw, index) => {
-      const scheduledDate = new Date();
-      scheduledDate.setDate(scheduledDate.getDate() + index);
-
-      return {
-        website_id: websiteId,
-        title: generateArticleTitle(kw.keyword),
-        target_keyword: kw.keyword,
-        scheduled_for: scheduledDate.toISOString(),
-        status: "planned",
-      };
-    });
-
-    await supabase.from("content_plan").insert(contentPlanInserts);
-
-    console.log(`Generated content plan with ${top7Keywords.length} articles`);
-  } catch (error) {
-    console.error("Error generating content plan:", error);
-    // Don't fail onboarding if keyword generation fails
-  }
-}
-
-function generateArticleTitle(keyword: string): string {
-  const templates = [
-    `The Complete Guide to ${keyword}`,
-    `How to Master ${keyword} in 2024`,
-    `${keyword}: Everything You Need to Know`,
-    `Top 10 ${keyword} Tips for Beginners`,
-    `The Ultimate ${keyword} Tutorial`,
-    `${keyword} Best Practices and Examples`,
-  ];
-
-  const template = templates[Math.floor(Math.random() * templates.length)];
-  return template.charAt(0).toUpperCase() + template.slice(1);
 }

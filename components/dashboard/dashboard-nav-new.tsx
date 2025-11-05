@@ -13,12 +13,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 
-interface DashboardNavProps {
-  isTrialing?: boolean;
-  trialDaysRemaining?: number;
-}
-
-export function DashboardNav(_props: DashboardNavProps) {
+export function DashboardNav() {
   const pathname = usePathname();
 
   const getBreadcrumbs = () => {

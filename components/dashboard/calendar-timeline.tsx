@@ -138,8 +138,21 @@ export function CalendarTimeline({ items: initialItems }: CalendarTimelineProps)
     });
   };
 
-  // Find today's index to start carousel there
-  const todayIndex = items.findIndex((item) => isToday(item.scheduledFor));
+  // Find today's index to center the carousel
+  // With 10 cards (3 past + today + 6 future), today should be at index 3
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const todayIndex = items.findIndex((item) => {
+    const itemDate = new Date(item.scheduledFor);
+    itemDate.setHours(0, 0, 0, 0);
+    return itemDate.getTime() === today.getTime();
+  });
+
+  // Start carousel to show today in center
+  // If we have 3 cards visible at a time, and today is at index 3,
+  // we want to start at index 2 so today appears in position 1 (center of 3)
+  const startIndex = Math.max(0, todayIndex > 0 ? todayIndex - 1 : 0);
 
   if (items.length === 0) {
     return (
@@ -157,9 +170,9 @@ export function CalendarTimeline({ items: initialItems }: CalendarTimelineProps)
     <div className="flex items-center justify-center min-h-[calc(100vh-200px)] px-16">
       <Carousel
         opts={{
-          align: "center",
+          align: "start",
           loop: false,
-          startIndex: todayIndex >= 0 ? todayIndex : 0,
+          startIndex,
         }}
         className="w-full max-w-6xl relative"
       >
@@ -198,12 +211,11 @@ export function CalendarTimeline({ items: initialItems }: CalendarTimelineProps)
 
                       {item.isEmpty ? (
                         <>
-                          {/* Empty state */}
-                          <div className="flex-1 flex items-center justify-center py-8">
-                            <div className="text-center space-y-2">
-                              <div className="text-4xl text-muted-foreground/30">/</div>
-                              <p className="text-xs text-muted-foreground">No content scheduled</p>
-                            </div>
+                          {/* Empty placeholder - no content assigned yet */}
+                          <div className="flex-1 flex items-center justify-center text-center">
+                            <p className="text-xs text-muted-foreground">
+                              No content planned
+                            </p>
                           </div>
                         </>
                       ) : (

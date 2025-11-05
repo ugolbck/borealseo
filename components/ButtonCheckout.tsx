@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { Loader2, Zap } from "lucide-react";
+import { createClient } from "@/libs/supabase/client";
 import apiClient from "@/libs/api";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 // This component is used to create Stripe Checkout Sessions
 // It calls the /api/stripe/create-checkout route with the priceId, successUrl and cancelUrl
@@ -17,16 +19,28 @@ const ButtonCheckout = ({
   mode?: "payment" | "subscription";
 }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const router = useRouter();
 
   const handlePayment = async () => {
     setIsLoading(true);
 
     try {
+      // Check if user is authenticated
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        // Redirect to signin with return URL
+        router.push(`/signin?redirect=${encodeURIComponent(window.location.pathname)}`);
+        setIsLoading(false);
+        return;
+      }
+
       const { url }: { url: string } = await apiClient.post(
         "/stripe/create-checkout",
         {
           priceId,
-          successUrl: window.location.href,
+          successUrl: `${window.location.origin}/onboarding`,
           cancelUrl: window.location.href,
           mode,
         }
@@ -35,9 +49,8 @@ const ButtonCheckout = ({
       window.location.href = url;
     } catch (e) {
       console.error(e);
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   return (

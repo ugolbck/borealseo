@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/libs/supabase/server";
 import { ContentCalendar } from "@/components/dashboard/content-calendar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getUserAccess } from "@/libs/subscription";
 
 export const dynamic = "force-dynamic";
 
@@ -28,15 +27,9 @@ export default async function Dashboard() {
 
   const website = websites[0]; // Use first website for now
 
-  // Get user access info
-  const access = await getUserAccess(user.id);
-
   return (
     <Suspense fallback={<CalendarSkeleton />}>
-      <ContentCalendar
-        websiteId={website.id}
-        access={access}
-      />
+      <ContentCalendar websiteId={website.id} />
     </Suspense>
   );
 }

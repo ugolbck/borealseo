@@ -35,12 +35,20 @@ export async function POST(req: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
+    if (!user) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const { priceId, mode, successUrl, cancelUrl } = body;
 
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user?.id)
+    // Get subscription to check for existing customer ID
+    const { data: subscription } = await supabase
+      .from("subscriptions")
+      .select("stripe_customer_id")
+      .eq("user_id", user.id)
       .single();
 
     const stripeSessionURL = await createCheckout({
@@ -48,12 +56,13 @@ export async function POST(req: NextRequest) {
       mode,
       successUrl,
       cancelUrl,
-      // If user is logged in, it will pass the user ID to the Stripe Session so it can be retrieved in the webhook later
-      clientReferenceId: user?.id,
+      // Pass the user ID to the Stripe Session so it can be retrieved in the webhook later
+      clientReferenceId: user.id,
       user: {
-        email: data?.email,
-        // If the user has already purchased, it will automatically prefill it's credit card
-        customerId: data?.customer_id,
+        // Email comes from the auth user object
+        email: user.email,
+        // If the user has already purchased, prefill their credit card
+        customerId: subscription?.stripe_customer_id,
       },
       // If you send coupons from the frontend, you can pass it here
       // couponId: body.couponId,

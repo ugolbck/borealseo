@@ -42,16 +42,6 @@ const config = {
       },
     ],
   },
-  trial: {
-    // Trial period in days
-    durationDays: 2,
-    // Features available during trial
-    features: [
-      "Access to current day + next day content",
-      "Limited keyword research",
-      "Basic article generation",
-    ],
-  },
   aws: {
     // If you use AWS S3/Cloudfront, put values in here
     bucket: "bucket-name",

@@ -10,23 +10,12 @@ import {
 } from "@/components/ui/accordion";
 import Link from "next/link";
 import ButtonCheckout from "@/components/ButtonCheckout";
+import { SimpleHeader } from "@/components/SimpleHeader";
 
 export default function PricingPage() {
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold">
-            {config.appName}
-          </Link>
-          <Link href="/signin">
-            <Button variant="outline" size="sm" className="text-xs cursor-pointer">
-              Sign In
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <SimpleHeader />
 
       {/* Pricing Section */}
       <div className="container mx-auto px-4 py-16 md:py-24">
@@ -35,7 +24,7 @@ export default function PricingPage() {
             Simple, Transparent Pricing
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Start with a 2-day free trial. No credit card required.
+            Subscribe and get instant access to your SEO content calendar.
           </p>
         </div>
 
@@ -79,11 +68,11 @@ export default function PricingPage() {
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="item-1">
               <AccordionTrigger className="text-left text-sm">
-                What&apos;s included in the free trial?
+                What happens after I subscribe?
               </AccordionTrigger>
               <AccordionContent className="text-sm text-muted-foreground">
-                Our {config.trial.durationDays}-day free trial gives you access to the current day and next day&apos;s content,
-                including AI-powered article generation and keyword research. You can test all core features before committing.
+                Once you subscribe, you get immediate access to your dashboard where you can complete onboarding.
+                We&apos;ll generate a 7-day content calendar with optimized keywords for your niche, ready for article generation.
               </AccordionContent>
             </AccordionItem>
 
@@ -92,8 +81,8 @@ export default function PricingPage() {
                 Can I cancel my subscription anytime?
               </AccordionTrigger>
               <AccordionContent className="text-sm text-muted-foreground">
-                Yes! You can cancel your subscription at any time from your dashboard. There are no cancellation fees,
-                and you&apos;ll retain access until the end of your billing period.
+                Yes! You can cancel your subscription at any time. There are no cancellation fees,
+                and you&apos;ll retain access until the end of your current 7-day billing period.
               </AccordionContent>
             </AccordionItem>
 
@@ -112,8 +101,8 @@ export default function PricingPage() {
                 How does the content calendar work?
               </AccordionTrigger>
               <AccordionContent className="text-sm text-muted-foreground">
-                Our AI analyzes your target keywords and creates a strategic content calendar. The weekly plan includes a 7-day calendar,
-                while the monthly plan extends this to 30 days, giving you more time to plan and execute your content strategy.
+                Our AI analyzes your target keywords and creates a strategic 7-day content calendar. Every week when your subscription
+                renews, we automatically generate the next 7 days of content, ensuring you always have a full week planned ahead.
               </AccordionContent>
             </AccordionItem>
 
@@ -128,11 +117,11 @@ export default function PricingPage() {
 
             <AccordionItem value="item-6">
               <AccordionTrigger className="text-left text-sm">
-                What makes the monthly plan better value?
+                Can I generate articles for past days?
               </AccordionTrigger>
               <AccordionContent className="text-sm text-muted-foreground">
-                The monthly plan includes everything in the weekly plan plus a longer 30-day content calendar, priority keyword suggestions,
-                advanced SEO analytics, and priority support. It&apos;s perfect for serious content creators who want more planning flexibility.
+                Yes! You can generate articles for any day in your calendar, including past days. This is useful if you miss a day
+                or want to backfill content. Your calendar shows all 7 days of the current period.
               </AccordionContent>
             </AccordionItem>
           </Accordion>

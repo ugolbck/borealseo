@@ -13,8 +13,6 @@ export interface UserProfile {
   id: string;
   is_verified: boolean;
   has_completed_onboarding: boolean;
-  trial_started_at: string | null;
-  trial_ends_at: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -1,34 +1,29 @@
--- Initial Boreal SEO Schema Migration for Supabase
--- This migration creates the core business logic tables
--- Note: Supabase auth.users table is used for authentication instead of custom user table
+-- Complete Boreal SEO Schema - Single Migration
+-- Drop everything and start fresh
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create enum types for better type safety
+-- Create enum types
 CREATE TYPE crawl_status_enum AS ENUM ('pending', 'crawling', 'completed', 'failed');
 CREATE TYPE keyword_status_enum AS ENUM ('monitoring', 'target', 'ranking');
 CREATE TYPE content_plan_status_enum AS ENUM ('planned', 'generating', 'draft', 'published', 'failed');
 CREATE TYPE article_status_enum AS ENUM ('draft', 'ready', 'published');
 CREATE TYPE brief_status_enum AS ENUM ('pending', 'processing', 'completed', 'failed');
 CREATE TYPE subscription_status_enum AS ENUM ('active', 'canceled', 'past_due', 'trialing', 'incomplete', 'incomplete_expired', 'unpaid');
-CREATE TYPE plan_type_enum AS ENUM ('trial', 'weekly', 'monthly', 'pro', 'agency', 'ltd');
+CREATE TYPE plan_type_enum AS ENUM ('weekly', 'monthly', 'pro', 'agency', 'ltd');
 
--- User profile extension table (extends Supabase auth.users)
+-- User profiles table (extends Supabase auth.users)
 CREATE TABLE public.user_profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   is_verified BOOLEAN DEFAULT false NOT NULL,
   has_completed_onboarding BOOLEAN DEFAULT false NOT NULL,
-  trial_started_at TIMESTAMPTZ,
-  trial_ends_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
--- Enable Row Level Security
 ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for user_profiles
 CREATE POLICY "Users can view their own profile"
   ON public.user_profiles FOR SELECT
   USING (auth.uid() = id);
@@ -111,16 +106,19 @@ CREATE POLICY "Users can view pages of their websites"
     )
   );
 
--- Keywords table
+-- Keywords table (KEYWORD POOL)
+-- Stores 100-400 keywords per website generated during onboarding
 CREATE TABLE public.keywords (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   website_id UUID NOT NULL REFERENCES public.websites(id) ON DELETE CASCADE,
   keyword TEXT NOT NULL,
   search_volume INTEGER,
   difficulty INTEGER,
+  seed_keyword TEXT,  -- Which user keyword generated this
+  score INTEGER,      -- Calculated: (search_volume/50) + (100-difficulty)
   current_ranking INTEGER,
   target_page_id UUID REFERENCES public.pages(id),
-  status keyword_status_enum DEFAULT 'monitoring' NOT NULL,
+  status keyword_status_enum DEFAULT 'target' NOT NULL,
   is_auto_discovered BOOLEAN DEFAULT false NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
@@ -129,6 +127,8 @@ CREATE TABLE public.keywords (
 CREATE INDEX keywords_website_id_idx ON public.keywords(website_id);
 CREATE INDEX keywords_keyword_idx ON public.keywords(keyword);
 CREATE INDEX keywords_ranking_idx ON public.keywords(current_ranking);
+CREATE INDEX keywords_website_score_idx ON public.keywords(website_id, score DESC);
+CREATE INDEX keywords_seed_keyword_idx ON public.keywords(website_id, seed_keyword);
 
 ALTER TABLE public.keywords ENABLE ROW LEVEL SECURITY;
 
@@ -152,7 +152,12 @@ CREATE POLICY "Users can manage keywords of their websites"
     )
   );
 
--- Content plan table
+COMMENT ON TABLE public.keywords IS 'Keyword pool: 100-400 keywords per website generated from user seed keywords during onboarding';
+COMMENT ON COLUMN public.keywords.seed_keyword IS 'The user-provided keyword that generated this keyword via DataForSEO API';
+COMMENT ON COLUMN public.keywords.score IS 'Calculated as (search_volume/50) + (100-difficulty) for ranking best keywords. Higher score = better keyword.';
+
+-- Content plan table (DAILY ASSIGNMENTS)
+-- One keyword assigned to each date for each website
 CREATE TABLE public.content_plan (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   website_id UUID NOT NULL REFERENCES public.websites(id) ON DELETE CASCADE,
@@ -160,6 +165,7 @@ CREATE TABLE public.content_plan (
   title TEXT NOT NULL,
   target_keyword TEXT NOT NULL,
   scheduled_for TIMESTAMPTZ NOT NULL,
+  scheduled_date DATE,  -- DATE only for easier queries
   status content_plan_status_enum DEFAULT 'planned' NOT NULL,
   brief_storage_url TEXT,
   content_storage_url TEXT,
@@ -173,6 +179,8 @@ CREATE TABLE public.content_plan (
 CREATE INDEX content_plan_website_id_idx ON public.content_plan(website_id);
 CREATE INDEX content_plan_status_idx ON public.content_plan(status);
 CREATE INDEX content_plan_scheduled_idx ON public.content_plan(scheduled_for);
+CREATE INDEX content_plan_scheduled_date_idx ON public.content_plan(scheduled_date);
+CREATE UNIQUE INDEX content_plan_website_date_unique ON public.content_plan(website_id, scheduled_date);
 
 ALTER TABLE public.content_plan ENABLE ROW LEVEL SECURITY;
 
@@ -195,6 +203,9 @@ CREATE POLICY "Users can manage content plan of their websites"
       AND websites.user_id = auth.uid()
     )
   );
+
+COMMENT ON TABLE public.content_plan IS 'Daily assignments: One keyword assigned to each date for each website. Keywords assigned progressively (7 days at a time)';
+COMMENT ON COLUMN public.content_plan.scheduled_date IS 'The date (DATE type) for this content plan - one plan per day per website. Used alongside scheduled_for timestamp.';
 
 -- Articles table
 CREATE TABLE public.articles (
@@ -311,11 +322,14 @@ CREATE TABLE public.subscriptions (
   current_period_start TIMESTAMPTZ NOT NULL,
   current_period_end TIMESTAMPTZ NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
+  updated_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  CONSTRAINT subscriptions_user_id_unique UNIQUE (user_id)
 );
 
 CREATE INDEX subscriptions_user_id_idx ON public.subscriptions(user_id);
 CREATE INDEX subscriptions_stripe_customer_id_idx ON public.subscriptions(stripe_customer_id);
+CREATE INDEX subscriptions_status_idx ON public.subscriptions(status);
+CREATE INDEX subscriptions_current_period_end_idx ON public.subscriptions(current_period_end);
 
 ALTER TABLE public.subscriptions ENABLE ROW LEVEL SECURITY;
 
@@ -354,16 +368,12 @@ CREATE TRIGGER update_content_briefs_updated_at BEFORE UPDATE ON public.content_
 CREATE TRIGGER update_subscriptions_updated_at BEFORE UPDATE ON public.subscriptions
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Function to initialize trial period on user signup
+-- Function to create user profile on signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.user_profiles (id, trial_started_at, trial_ends_at)
-  VALUES (
-    NEW.id,
-    NOW(),
-    NOW() + INTERVAL '2 days'
-  );
+  INSERT INTO public.user_profiles (id)
+  VALUES (NEW.id);
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
